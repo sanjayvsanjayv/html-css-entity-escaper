@@ -1,0 +1,28 @@
+---
+- name: Update apt package cache
+  apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Upgrade all packages to latest
+  apt:
+    upgrade: dist
+
+- name: Install base utilities
+  apt:
+    name:
+      - curl
+      - vim
+      - unzip
+      - ca-certificates
+      - gnupg
+      - lsb-release
+    state: present
+
+- name: Create application directory
+  file:
+    path: "{{ app_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"

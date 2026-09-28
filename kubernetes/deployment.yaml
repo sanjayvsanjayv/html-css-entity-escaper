@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: entity-escaper
+  namespace: entity-escaper
+  labels:
+    app: entity-escaper
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: entity-escaper
+  template:
+    metadata:
+      labels:
+        app: entity-escaper
+    spec:
+      containers:
+        - name: entity-escaper
+          # REGISTRY_USERNAME / IMAGE_NAME are placeholders — Jenkins
+          # replaces this with the real, tagged image at deploy time
+          # (see Jenkinsfile > Deploy to Kubernetes).
+          image: ghcr.io/REGISTRY_USERNAME/html-css-entity-escaper:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: http
+          envFrom:
+            - configMapRef:
+                name: entity-escaper-config
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "32Mi"
+            limits:
+              cpu: "200m"
+              memory: "64Mi"
+          # readinessProbe: keeps a pod out of the Service's endpoint list
+          # until nginx can actually serve traffic — prevents routing
+          # requests to a pod that isn't ready yet (e.g. during startup).
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          # livenessProbe: restarts a pod that has gone unresponsive
+          # (e.g. nginx worker deadlock) — this is Kubernetes self-healing.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3

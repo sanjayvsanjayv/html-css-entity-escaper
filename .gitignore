@@ -1,0 +1,44 @@
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# --- Node (if a package manager is added later) ---
+node_modules/
+npm-debug.log*
+
+# --- Terraform ---
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/*.tfstate.*
+terraform/.terraform.lock.hcl
+terraform/terraform.tfvars
+terraform/crash.log
+terraform/*.tfplan
+
+# --- Ansible ---
+ansible/inventory.ini
+ansible/*.retry
+ansible/.vault_pass
+
+# --- Kubernetes / secrets ---
+kubeconfig
+*.pem
+*.key
+*secret*.yaml
+!kubernetes/configmap.yaml
+
+# --- Environment / credentials (NEVER commit real values) ---
+.env
+.env.*
+*.tfvars
+!terraform.tfvars.example
+!inventory.ini.example
+
+# --- Build artifacts ---
+dist/
+build/
+*.log

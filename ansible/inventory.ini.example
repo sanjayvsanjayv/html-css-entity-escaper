@@ -1,0 +1,8 @@
+# Copy to inventory.ini and fill in the real host (git-ignored).
+# The IP below comes from Terraform's output: k3s_node_public_ip
+
+[k3s_servers]
+entity-escaper-node ansible_host=REPLACE_WITH_EC2_PUBLIC_IP ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/REPLACE_WITH_YOUR_KEY.pem
+
+[k3s_servers:vars]
+ansible_python_interpreter=/usr/bin/python3

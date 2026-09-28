@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entity Escaper — HTML/CSS Character Encoder</title>
+<meta name="description" content="Escape and unescape HTML/CSS special characters and see exactly what changed.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar__brand">
+      <span class="topbar__glyph">&lt;/&gt;</span>
+      <div>
+        <h1 class="topbar__title">Entity Escaper</h1>
+        <p class="topbar__subtitle">turn raw markup into safe, renderable text</p>
+      </div>
+    </div>
+    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle dark and light appearance">
+      <span class="theme-toggle__icon">◐</span>
+    </button>
+  </header>
+
+  <main class="layout">
+    <section class="panel panel--input" aria-labelledby="inputLabel">
+      <div class="panel__head">
+        <label id="inputLabel" for="inputArea" class="panel__label">Input</label>
+        <span id="charCount" class="char-count">0 characters</span>
+      </div>
+      <textarea id="inputArea" class="code-area" spellcheck="false" placeholder="&lt;div class=&quot;test&quot;&gt;Hello &amp; Welcome&lt;/div&gt;"></textarea>
+
+      <div class="actions">
+        <button id="escapeBtn" class="btn btn--primary" type="button">Escape HTML</button>
+        <button id="unescapeBtn" class="btn" type="button">Unescape HTML</button>
+        <button id="clearBtn" class="btn btn--ghost" type="button">Clear</button>
+      </div>
+
+      <p id="errorMsg" class="error-msg" role="alert" hidden></p>
+    </section>
+
+    <section class="panel panel--output" aria-labelledby="outputLabel">
+      <div class="panel__head">
+        <label id="outputLabel" class="panel__label">Output</label>
+        <button id="copyBtn" class="btn btn--small" type="button" disabled>Copy Output</button>
+      </div>
+      <pre id="outputArea" class="code-area code-area--output" aria-live="polite"><span class="placeholder">Escaped or unescaped text will appear here.</span></pre>
+      <p id="copyStatus" class="copy-status" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <section class="reference" aria-labelledby="referenceLabel">
+    <h2 id="referenceLabel" class="reference__title">Entity reference</h2>
+    <p class="reference__intro">These are the characters most likely to break HTML if left unescaped.</p>
+    <div class="reference__table-wrap">
+      <table class="reference__table">
+        <thead>
+          <tr>
+            <th scope="col">Character</th>
+            <th scope="col">Escaped entity</th>
+            <th scope="col">Meaning</th>
+          </tr>
+        </thead>
+        <tbody id="referenceBody">
+          <!-- populated by script.js -->
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p>HTML / CSS Entity Escaper &middot; runs entirely in your browser, no data leaves the page.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

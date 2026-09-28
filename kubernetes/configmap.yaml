@@ -1,0 +1,12 @@
+# Non-secret runtime configuration for the Entity Escaper.
+# Since the app is a static frontend, this is mostly illustrative of the
+# pattern (env-like values Kubernetes-native apps would read).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: entity-escaper-config
+  namespace: entity-escaper
+data:
+  APP_NAME: "HTML / CSS Entity Escaper"
+  APP_ENV: "production"
+  LOG_LEVEL: "info"

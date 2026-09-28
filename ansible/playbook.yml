@@ -1,0 +1,19 @@
+---
+# Configures a freshly provisioned EC2 host (from Terraform) so it can
+# run the Entity Escaper container via k3s (lightweight Kubernetes).
+#
+# Usage:
+#   cp inventory.ini.example inventory.ini   # fill in real host + key
+#   ansible-playbook -i inventory.ini playbook.yml
+
+- name: Configure Entity Escaper host
+  hosts: k3s_servers
+  become: true
+  vars:
+    app_dir: /opt/entity-escaper
+    k3s_version: "v1.29.4+k3s1"
+
+  roles:
+    - common
+    - docker
+    - k3s

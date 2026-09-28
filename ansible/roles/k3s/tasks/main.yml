@@ -1,0 +1,39 @@
+---
+- name: Check if k3s is already installed
+  stat:
+    path: /usr/local/bin/k3s
+  register: k3s_binary
+
+- name: Install k3s (single-node server)
+  shell: |
+    curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION={{ k3s_version }} sh -s - --write-kubeconfig-mode 644
+  when: not k3s_binary.stat.exists
+  args:
+    creates: /usr/local/bin/k3s
+
+- name: Ensure k3s service is running and enabled
+  service:
+    name: k3s
+    state: started
+    enabled: true
+
+- name: Wait for k3s node to be Ready
+  shell: /usr/local/bin/kubectl get nodes | grep -w Ready
+  register: k3s_ready
+  until: k3s_ready.rc == 0
+  retries: 10
+  delay: 10
+  changed_when: false
+
+- name: Fetch kubeconfig to a local staging path (for Jenkins/manual use)
+  fetch:
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: "./fetched_kubeconfig/{{ inventory_hostname }}.yaml"
+    flat: true
+
+- name: Remind operator to update kubeconfig server address
+  debug:
+    msg: >
+      Fetched kubeconfig to ./fetched_kubeconfig/{{ inventory_hostname }}.yaml.
+      Edit its "server:" field to use the node's public IP instead of
+      127.0.0.1 before using it from outside the host (e.g. from Jenkins).

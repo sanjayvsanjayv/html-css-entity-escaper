@@ -1,0 +1,23 @@
+# Requires an ingress controller installed in the cluster
+# (e.g. ingress-nginx). On k3s, Traefik ships by default — the
+# annotation below targets nginx; swap to traefik if you kept the default.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: entity-escaper-ingress
+  namespace: entity-escaper
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  rules:
+    - host: entity-escaper.example.com   # REPLACE with your real domain, or remove `host` to match on any host
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: entity-escaper-svc
+                port:
+                  number: 80
