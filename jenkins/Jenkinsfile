@@ -25,7 +25,7 @@ pipeline {
 
     environment {
         REGISTRY        = 'ghcr.io'                       // or docker.io
-        REGISTRY_OWNER  = 'REGISTRY_USERNAME'              // placeholder — set via Jenkins env or param
+        REGISTRY_OWNER  = 'sanjayvsanjayv'              // placeholder — set via Jenkins env or param
         IMAGE_NAME      = 'html-css-entity-escaper'
         IMAGE_TAG       = "${env.BUILD_NUMBER}"
         FULL_IMAGE      = "${REGISTRY}/${REGISTRY_OWNER}/${IMAGE_NAME}:${IMAGE_TAG}"
