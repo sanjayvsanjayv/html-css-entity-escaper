@@ -119,31 +119,38 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes') {
-            steps {
-                withCredentials([file(credentialsId: 'KUBECONFIG_CREDENTIALS_ID', variable: 'KUBECONFIG')]) {
-                    sh '''
-                        kubectl apply -f kubernetes/namespace.yaml
-                        kubectl apply -f kubernetes/configmap.yaml -n ${K8S_NAMESPACE}
-                        kubectl set image deployment/entity-escaper entity-escaper=${FULL_IMAGE} -n ${K8S_NAMESPACE} --record || \
-                        kubectl apply -f kubernetes/deployment.yaml -n ${K8S_NAMESPACE}
-                        kubectl apply -f kubernetes/service.yaml -n ${K8S_NAMESPACE}
-                        kubectl apply -f kubernetes/ingress.yaml -n ${K8S_NAMESPACE}
-                        kubectl rollout status deployment/entity-escaper -n ${K8S_NAMESPACE} --timeout=120s
-                    '''
-                }
-            }
-        }
+    steps {
+        sh '''
+            export KUBECONFIG=/var/jenkins_home/.kube/config
+
+            kubectl apply -f kubernetes/namespace.yaml
+            kubectl apply -f kubernetes/configmap.yaml -n ${K8S_NAMESPACE}
+
+            kubectl set image deployment/entity-escaper \
+                entity-escaper=${FULL_IMAGE} \
+                -n ${K8S_NAMESPACE} || \
+            kubectl apply -f kubernetes/deployment.yaml -n ${K8S_NAMESPACE}
+
+            kubectl apply -f kubernetes/service.yaml -n ${K8S_NAMESPACE}
+            kubectl apply -f kubernetes/ingress.yaml -n ${K8S_NAMESPACE}
+
+            kubectl rollout status deployment/entity-escaper \
+                -n ${K8S_NAMESPACE} \
+                --timeout=120s
+        '''
+    }
+}
 
         stage('Health Verification') {
-            steps {
-                withCredentials([file(credentialsId: 'KUBECONFIG_CREDENTIALS_ID', variable: 'KUBECONFIG')]) {
-                    sh '''
-                        kubectl get pods -n ${K8S_NAMESPACE} -l app=entity-escaper
-                        kubectl get svc -n ${K8S_NAMESPACE}
-                    '''
-                }
-            }
-        }
+    steps {
+        sh '''
+            export KUBECONFIG=/var/jenkins_home/.kube/config
+
+            kubectl get pods -n ${K8S_NAMESPACE} -l app=entity-escaper
+            kubectl get svc -n ${K8S_NAMESPACE}
+        '''
+    }
+}
     }
 
     post {
