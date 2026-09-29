@@ -127,8 +127,7 @@ pipeline {
             kubectl apply -f kubernetes/configmap.yaml -n ${K8S_NAMESPACE}
 
             kubectl set image deployment/entity-escaper \
-                entity-escaper=${FULL_IMAGE} \
-                -n ${K8S_NAMESPACE} || \
+                entity-escaper=${FULL_IMAGE} -n ${K8S_NAMESPACE} || \
             kubectl apply -f kubernetes/deployment.yaml -n ${K8S_NAMESPACE}
 
             kubectl apply -f kubernetes/service.yaml -n ${K8S_NAMESPACE}
@@ -141,7 +140,7 @@ pipeline {
     }
 }
 
-        stage('Health Verification') {
+stage('Health Verification') {
     steps {
         sh '''
             export KUBECONFIG=/var/jenkins_home/.kube/config
