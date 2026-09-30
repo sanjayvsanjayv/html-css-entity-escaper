@@ -1,13 +1,16 @@
 /**
  * Entity Escaper — client-side only.
- * Exposes escapeHtml / unescapeHtml on window so tests/test.js can reuse
- * the exact same logic that ships in the app (no duplicated rules).
+ *
+ * Exposes escapeHtml / unescapeHtml on window so tests/test.js
+ * can reuse the exact same logic that ships in the app.
  */
 (function () {
   "use strict";
 
-  // Order matters: & must be escaped first, or we'd double-escape
-  // the ampersands produced by the other replacements.
+  // ============================================================
+  // ESCAPE MAP
+  // ============================================================
+
   const ESCAPE_MAP = [
     ["&", "&amp;"],
     ["<", "&lt;"],
@@ -15,6 +18,10 @@
     ['"', "&quot;"],
     ["'", "&#39;"],
   ];
+
+  // ============================================================
+  // UNESCAPE MAP
+  // ============================================================
 
   const UNESCAPE_MAP = [
     ["&amp;", "&"],
@@ -26,35 +33,106 @@
     ["&apos;", "'"],
   ];
 
+  // ============================================================
+  // ESCAPE HTML
+  // ============================================================
+
   function escapeHtml(input) {
-    let out = input;
-    for (const [char, entity] of ESCAPE_MAP) {
-      out = out.split(char).join(entity);
-    }
-    return out;
+    /*
+     * Escape:
+     *   &
+     *   <
+     *   >
+     *   "
+     *   '
+     *
+     * But DO NOT escape an entity that is already escaped.
+     *
+     * Example:
+     *
+     * &lt;h1&gt;
+     *
+     * stays:
+     *
+     * &lt;h1&gt;
+     *
+     * instead of becoming:
+     *
+     * &amp;lt;h1&amp;gt;
+     */
+
+    return input.replace(
+      /&(?!(?:amp|lt|gt|quot|#39|#x27|apos);)|<|>|"|'/g,
+      function (char) {
+        switch (char) {
+          case "&":
+            return "&amp;";
+
+          case "<":
+            return "&lt;";
+
+          case ">":
+            return "&gt;";
+
+          case '"':
+            return "&quot;";
+
+          case "'":
+            return "&#39;";
+
+          default:
+            return char;
+        }
+      }
+    );
   }
+
+  // ============================================================
+  // UNESCAPE HTML
+  // ============================================================
 
   function unescapeHtml(input) {
-    let out = input;
-    for (const [entity, char] of UNESCAPE_MAP) {
-      out = out.split(entity).join(char);
+    let output = input;
+
+    for (const [entity, character] of UNESCAPE_MAP) {
+      output = output.split(entity).join(character);
     }
-    return out;
+
+    return output;
   }
 
-  // Expose for tests/test.js (Node) and for reuse in-page.
-  const api = { escapeHtml, unescapeHtml };
+  // ============================================================
+  // EXPORT FOR TESTS
+  // ============================================================
+
+  const api = {
+    escapeHtml,
+    unescapeHtml,
+  };
+
+  // Node.js
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;
   }
+
+  // Browser
   if (typeof window !== "undefined") {
     window.EntityEscaper = api;
   }
 
-  // ---------------- DOM wiring (browser only) ----------------
-  if (typeof document === "undefined") return;
+  // ============================================================
+  // BROWSER ONLY
+  // ============================================================
+
+  if (typeof document === "undefined") {
+    return;
+  }
 
   document.addEventListener("DOMContentLoaded", () => {
+    // ==========================================================
+    // GET HTML ELEMENTS
+    // ==========================================================
+
     const inputArea = document.getElementById("inputArea");
     const outputArea = document.getElementById("outputArea");
     const charCount = document.getElementById("charCount");
@@ -62,6 +140,10 @@
     const copyStatus = document.getElementById("copyStatus");
     const copyBtn = document.getElementById("copyBtn");
     const themeToggle = document.getElementById("themeToggle");
+
+    // ==========================================================
+    // REFERENCE TABLE
+    // ==========================================================
 
     const REFERENCE = [
       ["<", "&lt;", "Less-than sign"],
@@ -73,16 +155,36 @@
 
     function renderReference() {
       const body = document.getElementById("referenceBody");
+
+      if (!body) {
+        return;
+      }
+
       body.innerHTML = REFERENCE.map(
-        ([ch, entity, meaning]) =>
-          `<tr><td>${escapeHtml(ch)}</td><td>${entity.replace("&", "&amp;")}</td><td>${meaning}</td></tr>`
+        ([character, entity, meaning]) => `
+          <tr>
+            <td>${escapeHtml(character)}</td>
+            <td>${entity.replace("&", "&amp;")}</td>
+            <td>${meaning}</td>
+          </tr>
+        `
       ).join("");
     }
 
+    // ==========================================================
+    // CHARACTER COUNT
+    // ==========================================================
+
     function updateCharCount() {
-      const n = inputArea.value.length;
-      charCount.textContent = `${n} character${n === 1 ? "" : "s"}`;
+      const count = inputArea.value.length;
+
+      charCount.textContent =
+        `${count} character${count === 1 ? "" : "s"}`;
     }
+
+    // ==========================================================
+    // ERROR HANDLING
+    // ==========================================================
 
     function showError(message) {
       errorMsg.textContent = message;
@@ -90,97 +192,199 @@
     }
 
     function clearError() {
-      errorMsg.hidden = true;
       errorMsg.textContent = "";
+      errorMsg.hidden = true;
     }
 
-    // Highlight escaped entities (&amp; &lt; &gt; &quot; &#39;) so the
-    // learning/visualizer intent of the tool is visible in the output.
-    function renderOutput(text, mode) {
-      if (mode === "escape") {
-        const highlighted = text.replace(
-          /(&amp;|&lt;|&gt;|&quot;|&#39;)/g,
-          '<span class="entity-hl">$1</span>'
-        );
-        outputArea.innerHTML = highlighted || '<span class="placeholder">Nothing to show.</span>';
-      } else {
-        outputArea.textContent = text;
-      }
+    // ==========================================================
+    // OUTPUT
+    // ==========================================================
+
+    function renderOutput(text) {
+      /*
+       * IMPORTANT:
+       *
+       * DO NOT use:
+       *
+       * outputArea.innerHTML = text;
+       *
+       * because the browser would interpret:
+       *
+       * &lt;
+       *
+       * as:
+       *
+       * <
+       *
+       * We use textContent so the escaped characters are shown
+       * literally on the screen.
+       */
+
+      outputArea.textContent = text || "";
     }
+
+    // ==========================================================
+    // ESCAPE BUTTON
+    // ==========================================================
 
     function runEscape() {
-      clearError();
-      const value = inputArea.value;
-      if (!value.trim()) {
-        showError("Enter some text or markup before escaping.");
-        return;
-      }
-      renderOutput(escapeHtml(value), "escape");
-      copyBtn.disabled = false;
-      copyStatus.textContent = "";
-    }
+  clearError();
+
+  const value = inputArea.value;
+
+  if (!value.trim()) {
+    showError("Enter some text or markup before escaping.");
+    return;
+  }
+
+  const escaped = escapeHtml(value);
+
+  console.log("INPUT:", value);
+  console.log("ESCAPED:", escaped);
+
+  renderOutput(escaped, "escape");
+
+  copyBtn.disabled = false;
+  copyStatus.textContent = "";
+}
+
+    // ==========================================================
+    // UNESCAPE BUTTON
+    // ==========================================================
 
     function runUnescape() {
       clearError();
+
       const value = inputArea.value;
+
       if (!value.trim()) {
         showError("Enter some text or entities before unescaping.");
         return;
       }
-      renderOutput(unescapeHtml(value), "unescape");
+
+      const unescaped = unescapeHtml(value);
+
+      renderOutput(unescaped);
+
       copyBtn.disabled = false;
       copyStatus.textContent = "";
     }
 
+    // ==========================================================
+    // CLEAR BUTTON
+    // ==========================================================
+
     function clearAll() {
       inputArea.value = "";
-      outputArea.innerHTML = '<span class="placeholder">Escaped or unescaped text will appear here.</span>';
+
+      outputArea.textContent = "";
+
       copyBtn.disabled = true;
       copyStatus.textContent = "";
+
       clearError();
+
       updateCharCount();
+
       inputArea.focus();
     }
 
+    // ==========================================================
+    // COPY OUTPUT
+    // ==========================================================
+
     async function copyOutput() {
       const text = outputArea.textContent || "";
+
       try {
         await navigator.clipboard.writeText(text);
+
         copyStatus.textContent = "Copied to clipboard.";
-      } catch (e) {
-        copyStatus.textContent = "Copy failed — select the text manually.";
+      } catch (error) {
+        copyStatus.textContent =
+          "Copy failed — select the text manually.";
       }
-      setTimeout(() => (copyStatus.textContent = ""), 2500);
+
+      setTimeout(() => {
+        copyStatus.textContent = "";
+      }, 2500);
     }
+
+    // ==========================================================
+    // THEME
+    // ==========================================================
 
     function toggleTheme() {
       const root = document.documentElement;
-      const current = root.getAttribute("data-theme") === "light" ? "light" : "dark";
-      const next = current === "light" ? "dark" : "light";
+
+      const current =
+        root.getAttribute("data-theme") === "light"
+          ? "light"
+          : "dark";
+
+      const next =
+        current === "light"
+          ? "dark"
+          : "light";
+
       root.setAttribute("data-theme", next);
+
       try {
-        localStorage.setItem("entity-escaper-theme", next);
-      } catch (e) {
-        /* storage unavailable — theme just won't persist */
+        localStorage.setItem(
+          "entity-escaper-theme",
+          next
+        );
+      } catch (error) {
+        // Theme still works even if storage is unavailable.
       }
     }
 
-    // Restore saved theme preference, if any.
+    // ==========================================================
+    // RESTORE THEME
+    // ==========================================================
+
     try {
-      const saved = localStorage.getItem("entity-escaper-theme");
-      if (saved) document.documentElement.setAttribute("data-theme", saved);
-    } catch (e) {
-      /* ignore */
+      const savedTheme =
+        localStorage.getItem("entity-escaper-theme");
+
+      if (savedTheme) {
+        document.documentElement.setAttribute(
+          "data-theme",
+          savedTheme
+        );
+      }
+    } catch (error) {
+      // Ignore localStorage errors.
     }
 
-    document.getElementById("escapeBtn").addEventListener("click", runEscape);
-    document.getElementById("unescapeBtn").addEventListener("click", runUnescape);
-    document.getElementById("clearBtn").addEventListener("click", clearAll);
+    // ==========================================================
+    // BUTTON EVENTS
+    // ==========================================================
+
+    document
+      .getElementById("escapeBtn")
+      .addEventListener("click", runEscape);
+
+    document
+      .getElementById("unescapeBtn")
+      .addEventListener("click", runUnescape);
+
+    document
+      .getElementById("clearBtn")
+      .addEventListener("click", clearAll);
+
     copyBtn.addEventListener("click", copyOutput);
+
     themeToggle.addEventListener("click", toggleTheme);
+
     inputArea.addEventListener("input", updateCharCount);
 
+    // ==========================================================
+    // INITIALIZE
+    // ==========================================================
+
     renderReference();
+
     updateCharCount();
   });
 })();
